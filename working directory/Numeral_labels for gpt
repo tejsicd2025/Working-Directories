@@ -1,0 +1,54 @@
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification
+import json
+
+
+# Load the label dictionary
+label_dict_path = r"C:\Users\dixit\Desktop\Numeral_Labels_GPT_536_Dataset\label_mapping.json"
+with open(label_dict_path, "r") as f:
+    label_dict = json.load(f)
+
+print("Label dictionary loaded:", label_dict)
+
+# Load the saved tokenizer and model
+model_directory = r"C:\Users\dixit\Desktop\Numeral_Labels_GPT_536_Dataset"
+tokenizer = BertTokenizer.from_pretrained(model_directory)
+model = BertForSequenceClassification.from_pretrained(model_directory)
+print(model)
+
+# Example input for testing
+input_data = {
+    "Nitrogen": 20,
+    "Phosphorous": 6,
+    "Potassium": 25,
+    "Humidity": 64,
+    "Temperature": 27,
+    "Soil Type": "Clayey",
+    "Crop Type": "kidneybeans",
+    "Moisture": 33
+}
+
+# Prepare input text
+input_text = (
+    f"N: {input_data['Nitrogen']}, P: {input_data['Phosphorous']}, K: {input_data['Potassium']}, "
+    f"Humidity: {input_data['Humidity']}, Temperature: {input_data['Temperature']}, "
+    f"Soil Type: {input_data['Soil Type']}, Crop Type: {input_data['Crop Type']}, "
+    f"Moisture: {input_data['Moisture']}"
+)
+
+# Tokenize the input
+inputs = tokenizer(input_text, padding=True, truncation=True, return_tensors="pt", max_length=128)
+
+
+# Get prediction
+with torch.no_grad():
+    outputs = model(**inputs)
+    logits = outputs.logits
+    predictions = torch.argmax(logits, dim=1)
+
+# Map prediction to label
+class_labels = {idx: label for label, idx in label_dict.items()}
+predicted_fertilizer = class_labels[predictions.item()]
+print(f"Predicted Fertilizer: {predicted_fertilizer}")
+
+
